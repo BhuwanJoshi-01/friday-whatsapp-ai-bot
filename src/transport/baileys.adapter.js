@@ -72,7 +72,34 @@ class BaileysAdapter extends EventEmitter {
 
       // --- Connection state ---
       this.sock.ev.on('connection.update', (update) => {
-        // ... (existing code)
+        const { connection, lastDisconnect, qr } = update;
+
+        if (qr) {
+          // Generate and display QR code
+          qrcode.generate(qr, { small: true });
+          logger.info('Scan QR code to login (Baileys)');
+          this.emit('qr', qr);
+        }
+
+        if (connection === 'close') {
+          const shouldReconnect = (lastDisconnect?.error)?.output?.statusCode !== DisconnectReason.loggedOut;
+          logger.warn({ reason: lastDisconnect?.error?.message, shouldReconnect }, 'Baileys connection closed');
+
+          if (shouldReconnect && this._reconnectAttempts < this._maxReconnect) {
+            this._reconnectAttempts++;
+            logger.info({ attempt: this._reconnectAttempts, max: this._maxReconnect }, 'Attempting to reconnect Baileys');
+            setTimeout(() => this.connect(), 5000);
+          } else {
+            this.emit('disconnected', lastDisconnect?.error?.message || 'Connection closed');
+          }
+        } else if (connection === 'open') {
+          this._ready = true;
+          this._reconnectAttempts = 0;
+          logger.info('Baileys connection opened successfully');
+          this.emit('ready');
+        } else if (connection === 'connecting') {
+          logger.info('Baileys connecting...');
+        }
       });
 
       // --- Presence updates (detect typing) ---

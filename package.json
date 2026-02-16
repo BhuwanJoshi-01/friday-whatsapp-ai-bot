@@ -1,0 +1,32 @@
+{
+  "name": "whatsapp-ai-operator",
+  "version": "2.0.0",
+  "description": "AI Personal Operator — WhatsApp bot with context-aware memory, offline assistant, smart summaries, scheduling, and more",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "start:old": "node index.js",
+    "lint": "node -e \"try{require('./src/index.js');console.log('src/index.js loads')}catch(e){console.error(e);process.exit(1)}\""
+  },
+  "dependencies": {
+    "@google-cloud/text-to-speech": "^5.5.0",
+    "@google/genai": "^1.25.0",
+    "@whiskeysockets/baileys": "^6.7.16",
+    "axios": "^1.13.5",
+    "better-sqlite3": "^11.7.0",
+    "croner": "^9.0.0",
+    "dotenv": "^17.2.3",
+    "express": "^4.18.2",
+    "ffmpeg-static": "^5.2.0",
+    "fluent-ffmpeg": "^2.1.3",
+    "groq-sdk": "^0.37.0",
+    "ms": "^2.1.3",
+    "nanoid": "^3.3.8",
+    "node-fetch": "^2.6.7",
+    "pino": "^9.6.0",
+    "pino-pretty": "^13.0.0",
+    "qrcode-terminal": "^0.12.0",
+    "whatsapp-web.js": "^1.26.0",
+    "zod": "^3.24.0"
+  }
+}

@@ -1,0 +1,221 @@
+{
+  "name": "WhatsApp AI Auto Reply - Integrated",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "whatsapp-webhook",
+        "options": {}
+      },
+      "id": "1",
+      "name": "WhatsApp Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [250, 200]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.Body }}",
+              "operation": "isNotEmpty"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "2",
+      "name": "Check Message Content",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [450, 200]
+    },
+    {
+      "parameters": {
+        "mode": "passThrough",
+        "options": {}
+      },
+      "id": "3",
+      "name": "Log Incoming Message",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [450, 400]
+    },
+    {
+      "parameters": {
+        "mode": "assignments",
+        "assignments": [
+          {
+            "name": "prompt",
+            "value": "={{ `User: ${$json.Body}` }}"
+          },
+          {
+            "name": "history",
+            "value": "={{ $json.history || [] }}"
+          }
+        ],
+        "options": {}
+      },
+      "id": "4",
+      "name": "Prepare AI Request",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3,
+      "position": [650, 200]
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-2.5-flash",
+          "mode": "list",
+          "cachedResultName": "models/gemini-2.5-flash"
+        },
+        "messages": {
+          "values": [
+            {
+              "role": "system",
+              "content": "You are a helpful assistant replying to WhatsApp messages clearly and concisely."
+            },
+            {
+              "role": "user",
+              "content": "={{ $json.prompt }}"
+            }
+          ]
+        },
+        "options": {
+          "temperature": 0.7
+        }
+      },
+      "id": "5",
+      "name": "Generate AI Response",
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1,
+      "position": [850, 200],
+      "credentials": {
+        "googlePalmApi": {
+          "id": "XzWi2wBzyN9VNqLz",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "assignments",
+        "assignments": [
+          {
+            "name": "replyText",
+            "value": "={{ $json.data[0].content[0].text || 'Sorry, I could not process that right now.' }}"
+          }
+        ],
+        "options": {}
+      },
+      "id": "6",
+      "name": "Format WhatsApp Reply",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3,
+      "position": [1050, 200]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://<YOUR_NODE_SERVER>:3001/send-message",
+        "jsonParameters": true,
+        "options": {},
+        "bodyParametersJson": "={ \"to\": $json.From, \"message\": $json.replyText }"
+      },
+      "id": "7",
+      "name": "Send WhatsApp Reply",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [1250, 200]
+    },
+    {
+      "parameters": {
+        "functionCode": "return [{ json: { timestamp: new Date().toISOString(), from: $json.From, message: $json.Body } }];"
+      },
+      "id": "8",
+      "name": "Log Message History",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [650, 400]
+    }
+  ],
+  "connections": {
+    "WhatsApp Webhook": {
+      "main": [
+        [
+          {
+            "node": "Check Message Content",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Log Incoming Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Message Content": {
+      "main": [
+        [
+          {
+            "node": "Prepare AI Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare AI Request": {
+      "main": [
+        [
+          {
+            "node": "Generate AI Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate AI Response": {
+      "main": [
+        [
+          {
+            "node": "Format WhatsApp Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format WhatsApp Reply": {
+      "main": [
+        [
+          {
+            "node": "Send WhatsApp Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log Incoming Message": {
+      "main": [
+        [
+          {
+            "node": "Log Message History",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "whatsapp-ai-integrated-2025"
+}
